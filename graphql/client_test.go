@@ -12,20 +12,42 @@ func TestQueryReturnsAnEmptyQuery(t *testing.T) {
 	}
 }
 
-func TestAddObjectToQuerySuccesfully(t *testing.T) {
+func TestAddObjectAndFieldsToQuerySuccesfully(t *testing.T) {
 	/* handler := &testHandler{}
 	ts := httptest.NewServer(handler)
 	*/
 	c := NewClient2("myurl")
 	q := c.Query()
-	q, _ = q.Fields("hero", "name")
+	q, _ = q.Object("hero").StringField("name")
 	printedQuery := q.print()
-	if heroQueryRaw != printedQuery {
-		t.Errorf("\n `%s` \n was expected but got `%s`", heroQueryRaw, printedQuery)
+	if expectedPrintedHeroRaw != printedQuery {
+		t.Errorf("\n `%s` \n was expected but got `%s`", expectedPrintedHeroRaw, printedQuery)
 	}
 }
 
-var heroQueryRaw = `{hero{name}}`
+func TestAddFieldsWithNoObjectReturnsError(t *testing.T) {
+	c := NewClient2("myurl")
+	q := c.Query()
+	_, err := q.StringField("name")
+	if err != ErrFieldsAddedWithoutObject {
+		t.Errorf("Expected error %v but got %v", ErrFieldsAddedWithoutObject, err)
+	}
+}
+
+func TestAddObjectAsAFieldSuccesfully(t *testing.T) {
+	c := NewClient2("myurl")
+	q := c.Query()
+	q, _ = q.Object("hero").StringField("name")
+	q, _ = q.ObjectField("friends")
+	q, _ = q.StringField("name")
+	printedQuery := q.print()
+	if expectedPrintedHeroWithFriendsRaw != printedQuery {
+		t.Errorf("\n `%s` \n was expected but got `%s`", expectedPrintedHeroWithFriendsRaw, printedQuery)
+	}
+}
+
+var expectedPrintedHeroRaw = `{/hero/{/name/}/}`
+var expectedPrintedHeroWithFriendsRaw = `{/hero/{/name/friends/{/name/}/}/}`
 
 /* type testHandler struct {
 }

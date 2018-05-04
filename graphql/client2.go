@@ -13,7 +13,9 @@ type Client2 interface {
 
 // Query represents a query operation
 type Query interface {
-	Fields(object string, fields ...string) (Query, error)
+	Object(name string) Query
+	StringField(name string) (Query, error)
+	ObjectField(objectname string) (Query, error)
 	print() string
 	//Execute() (string, error)
 }
@@ -36,31 +38,44 @@ func (c *client2) SetToken(token string) {
 
 func (c *client2) Query() Query {
 	return &query{
-		objects: make(map[string][]field),
+		objects: make(map[string]*Object),
 	}
 }
 
 type query struct {
-	mux     sync.Mutex
-	objects map[string][]field
+	mux           sync.Mutex
+	objects       map[string]*Object
+	currentObject *Object
 }
 
-type field struct {
-	name string
-}
-
-func (q *query) Fields(object string, fields ...string) (Query, error) {
-	o, found := q.objects[object]
+func (q *query) Object(name string) Query {
+	_, found := q.objects[name]
 	if !found {
-		q.objects[object] = []field{}
-		o = q.objects[object]
+		q.objects[name] = &Object{name: name}
 	}
 
-	for _, f := range fields {
-		o = append(o, field{name: f})
+	q.currentObject = q.objects[name]
+	return q
+}
+
+func (q *query) StringField(name string) (Query, error) {
+
+	if q.currentObject == nil {
+		return q, ErrFieldsAddedWithoutObject
 	}
 
-	q.objects[object] = o
+	q.currentObject.fields = append(q.currentObject.fields, &stringField{name: name})
+	return q, nil
+}
+
+func (q *query) ObjectField(objectname string) (Query, error) {
+	if q.currentObject == nil {
+		return q, ErrFieldsAddedWithoutObject
+	}
+
+	objectField := &objectField{object: &Object{name: objectname}}
+	q.currentObject.fields = append(q.currentObject.fields, objectField)
+	q.currentObject = objectField.object
 	return q, nil
 }
 
@@ -68,16 +83,11 @@ func (q *query) print() string {
 	objectsAndFields := []string{}
 
 	objectsAndFields = append(objectsAndFields, `{`)
-	for oname, fields := range q.objects {
-		objectsAndFields = append(objectsAndFields, oname)
-		objectsAndFields = append(objectsAndFields, `{`)
-		for _, field := range fields {
-			objectsAndFields = append(objectsAndFields, field.name)
-		}
-		objectsAndFields = append(objectsAndFields, `}`)
+	for _, object := range q.objects {
+		objectsAndFields = append(objectsAndFields, print(object))
 	}
 
 	objectsAndFields = append(objectsAndFields, `}`)
-	return strings.Join(objectsAndFields, "")
+	return strings.Join(objectsAndFields, "/")
 
 }
