@@ -7,7 +7,7 @@ import (
 
 var fmtSeparator = " "
 
-func formatQuery(q Query) string {
+func formatQuery(q *Query) string {
 	objectsAndFields := []string{}
 	objectsAndFields = append(objectsAndFields, `query { `)
 	for _, object := range q.getObjects() {

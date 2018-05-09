@@ -31,7 +31,7 @@ func main() {
 	c2 := graphql.NewClient2("https://api.github.com/graphql")
 	c2.SetToken("edb547e97d20e321a30bbf2eda0463859bf4c683")
 
-	q := c2.Query().Object("viewer").StringField("login")
+	q := c2.Query().AddObject("viewer").AddStringField("login")
 	res, err := c2.Execute(q)
 	parse(res, err)
 

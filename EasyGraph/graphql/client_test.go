@@ -11,7 +11,7 @@ import (
 
 func TestQueryReturnsAnEmptyQuery(t *testing.T) {
 	c := NewClient2("myurl")
-	q := c.Query()
+	q := c.QueryBuilder()
 	if q == nil {
 		t.Errorf("Query object was expected but got nil")
 	}
@@ -20,7 +20,7 @@ func TestQueryReturnsAnEmptyQuery(t *testing.T) {
 func TestAddObjectAndFieldsToQuerySuccesfully(t *testing.T) {
 
 	c := NewClient2("myurl")
-	q := c.Query().Object("hero").StringField("name")
+	q := c.QueryBuilder().AddObject("hero").AddStringField("name")
 	printedQuery := q.print()
 	if expectedPrintedHeroRaw != printedQuery {
 		t.Errorf("\n `%s` \n was expected but got `%s`", expectedPrintedHeroRaw, printedQuery)
@@ -29,7 +29,7 @@ func TestAddObjectAndFieldsToQuerySuccesfully(t *testing.T) {
 
 func TestAddObjectAsAFieldSuccesfully(t *testing.T) {
 	c := NewClient2("myurl")
-	q := c.Query().Object("hero").StringField("name").ObjectField("friends").StringField("name")
+	q := c.QueryBuilder().AddObject("hero").AddStringField("name").ObjectField("friends").AddStringField("name")
 	printedQuery := q.print()
 	if expectedPrintedHeroWithFriendsRaw != printedQuery {
 		t.Errorf("\n `%s` \n was expected but got `%s`", expectedPrintedHeroWithFriendsRaw, printedQuery)
@@ -41,9 +41,9 @@ func TestExecuteSimpleQuerySuccesfully(t *testing.T) {
 	ts := httptest.NewServer(handler)
 
 	c := NewClient2(ts.URL)
-	q := c.Query()
-	q = q.Object("viewer").StringField("login")
-	res, err := c.Execute(q)
+	q := c.QueryBuilder()
+	q = q.AddObject("viewer").AddStringField("login")
+	res, err := c.Execute(q.Query())
 	if err != nil {
 		t.Errorf("Error was not expected but got %s", err)
 	}
