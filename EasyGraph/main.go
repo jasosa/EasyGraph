@@ -12,7 +12,7 @@ import (
 func main() {
 
 	c := graphql.NewClient("https://api.github.com/graphql")
-	c.SetToken("edb547e97d20e321a30bbf2eda0463859bf4c683")
+	c.SetToken("3eaec7d5e5e5233a546c3bf58f091b7f7fcecc63")
 
 	for _, q := range queries {
 		res, err := c.DoQuery(q)
@@ -28,11 +28,17 @@ func main() {
 		parse(res, err)
 	}
 
-	c2 := graphql.NewClient2("https://api.github.com/graphql")
-	c2.SetToken("edb547e97d20e321a30bbf2eda0463859bf4c683")
+	fmt.Println("################ client2 #############")
 
-	q := c2.Query().AddObject("viewer").AddStringField("login")
-	res, err := c2.Execute(q)
+	c2 := graphql.NewClient2("https://api.github.com/graphql")
+	c2.SetToken("3eaec7d5e5e5233a546c3bf58f091b7f7fcecc63")
+
+	q := c2.QueryBuilder().AddObject("viewer").AddSingleField("login")
+	res, err := c2.Execute(q.Query())
+	parse(res, err)
+
+	q = c2.QueryBuilder().AddObject("viewer").AddSingleFieldWithArguments("avatarUrl", graphql.Argument{Name: "size", Value: 512})
+	res, err = c2.Execute(q.Query())
 	parse(res, err)
 
 }
@@ -53,6 +59,7 @@ func parse(res *http.Response, err error) {
 
 var queries = []string{
 	`query {viewer{login}}`,
+	`query { meta { isPasswordAuthenticationVerifiable } }`,
 	`query {repository(owner: "jasosa", name:"StringCalculator"){id}}`,
 	`mutation { addStar (input: {
 	   		starrableId: "MDEwOlJlcG9zaXRvcnkxODk3MTY5MQ==",

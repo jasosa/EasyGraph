@@ -17,22 +17,34 @@ func TestQueryReturnsAnEmptyQuery(t *testing.T) {
 	}
 }
 
-func TestAddObjectAndFieldsToQuerySuccesfully(t *testing.T) {
+func TestAddSingleFieldWithoutArguments(t *testing.T) {
 
 	c := NewClient2("myurl")
-	q := c.QueryBuilder().AddObject("hero").AddStringField("name")
+	q := c.QueryBuilder().AddObject("hero").AddSingleField("name")
 	printedQuery := q.print()
-	if expectedPrintedHeroRaw != printedQuery {
-		t.Errorf("\n `%s` \n was expected but got `%s`", expectedPrintedHeroRaw, printedQuery)
+	if expectedSingleFieldWithoutArguments != printedQuery {
+		t.Errorf("\n `%s` \n was expected but got `%s`", expectedSingleFieldWithoutArguments, printedQuery)
 	}
 }
 
-func TestAddObjectAsAFieldSuccesfully(t *testing.T) {
+func TestAddNestedObjectField(t *testing.T) {
 	c := NewClient2("myurl")
-	q := c.QueryBuilder().AddObject("hero").AddStringField("name").ObjectField("friends").AddStringField("name")
+	q := c.QueryBuilder().AddObject("hero").AddSingleField("name").ObjectField("friends").AddSingleField("name")
 	printedQuery := q.print()
-	if expectedPrintedHeroWithFriendsRaw != printedQuery {
-		t.Errorf("\n `%s` \n was expected but got `%s`", expectedPrintedHeroWithFriendsRaw, printedQuery)
+	if expectedNestedObjectField != printedQuery {
+		t.Errorf("\n `%s` \n was expected but got `%s`", expectedNestedObjectField, printedQuery)
+	}
+}
+func TestAddSimpleFieldWithArguments(t *testing.T) {
+	c := NewClient2("myurl")
+	arg := Argument{
+		Name:  "id",
+		Value: "1000",
+	}
+	q := c.QueryBuilder().AddObject("heroes").AddSingleFieldWithArguments("human", arg)
+	printedQuery := q.print()
+	if expectedSingleWithArguments != printedQuery {
+		t.Errorf("\n `%s` \n was expected but got `%s`", expectedSingleWithArguments, printedQuery)
 	}
 }
 
@@ -42,7 +54,7 @@ func TestExecuteSimpleQuerySuccesfully(t *testing.T) {
 
 	c := NewClient2(ts.URL)
 	q := c.QueryBuilder()
-	q = q.AddObject("viewer").AddStringField("login")
+	q = q.AddObject("viewer").AddSingleField("login")
 	res, err := c.Execute(q.Query())
 	if err != nil {
 		t.Errorf("Error was not expected but got %s", err)
@@ -52,11 +64,34 @@ func TestExecuteSimpleQuerySuccesfully(t *testing.T) {
 	if string(body) != string(loginCallAnswer) {
 		t.Errorf("%v was expected but got %v", string(loginCallAnswer), string(body))
 	}
-
 }
 
-var expectedPrintedHeroRaw = `{"query": "query { hero { name }}"}`
-var expectedPrintedHeroWithFriendsRaw = `{"query": "query { hero { name friends { name } }}"}`
+func TestExecuteQueryWithArgumentsSuccesfully(t *testing.T) {
+	handler := &testHandler{}
+	ts := httptest.NewServer(handler)
+
+	c := NewClient2(ts.URL)
+	qb := c.QueryBuilder()
+	arg := Argument{
+		Name:  "size",
+		Value: 512,
+	}
+
+	query := qb.AddObject("viewer").AddSingleFieldWithArguments("avatarUrl", arg).Query()
+	res, err := c.Execute(query)
+	if err != nil {
+		t.Errorf("Error was not expected but got %s", err)
+	}
+
+	body, _ := ioutil.ReadAll(res.Body)
+	if string(body) != string(avatarCallAnswer) {
+		t.Errorf("%v was expected but got %v", string(avatarCallAnswer), string(body))
+	}
+}
+
+var expectedSingleFieldWithoutArguments = `{"query": "query { hero { name }}"}`
+var expectedNestedObjectField = `{"query": "query { hero { name friends { name } }}"}`
+var expectedSingleWithArguments = `{"query": "query { heroes { human (id: \"1000\" ) }}"}`
 
 var loginCallAnswer = []byte(`{
 	"data": {
@@ -66,8 +101,17 @@ var loginCallAnswer = []byte(`{
 	}
   }`)
 
+var avatarCallAnswer = []byte(`{
+	"data": {
+	  "viewer": {
+		"avatarUrl": "myavataurl"
+	  }
+	}
+  }`)
+
 var (
-	loginCall = "query { viewer { login }}"
+	loginCall  = "query { viewer { login }}"
+	avatarCall = "query { viewer { avatarUrl (size: 512 ) }}"
 )
 
 type graphqlQuery struct {
@@ -91,5 +135,10 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(loginCallAnswer)
+	case avatarCall:
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(avatarCallAnswer)
 	}
+
 }

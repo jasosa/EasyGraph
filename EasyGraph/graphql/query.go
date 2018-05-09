@@ -26,14 +26,25 @@ func (q *QueryBuilder) AddObject(name string) *QueryBuilder {
 	return q
 }
 
-// AddStringField adds a field of type string to the current object in the query
-func (q *QueryBuilder) AddStringField(name string) *QueryBuilder {
+// AddSingleField adds a single field with no arguments to the current object in the query
+func (q *QueryBuilder) AddSingleField(name string) *QueryBuilder {
 
 	if q.currentObject == nil {
 		return q
 	}
 
-	q.currentObject.fields = append(q.currentObject.fields, &stringField{name: name})
+	q.currentObject.fields = append(q.currentObject.fields, &singleField{name: name})
+	return q
+}
+
+// AddSingleFieldWithArguments adds a single field with arguments to the current object in the query
+func (q *QueryBuilder) AddSingleFieldWithArguments(name string, args ...Argument) *QueryBuilder {
+
+	if q.currentObject == nil {
+		return q
+	}
+
+	q.currentObject.fields = append(q.currentObject.fields, &singleField{name: name, args: args})
 	return q
 }
 
