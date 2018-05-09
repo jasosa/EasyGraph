@@ -2,13 +2,14 @@ package graphql
 
 import "sync"
 
-// QueryBuilder represents a graphql query
+// QueryBuilder is used to create Query Objects
 type QueryBuilder struct {
 	mux           sync.Mutex
 	objects       map[string]*Object
 	currentObject *Object
 }
 
+// Query represents a graphql query
 type Query struct {
 	objects map[string]*Object
 }
