@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github/jasosa/EasyGraph/graphql"
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/jasosa/EasyGraph/EasyGraph/graphql"
 )
 
 func main() {
