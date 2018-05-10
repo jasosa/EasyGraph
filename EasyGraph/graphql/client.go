@@ -2,10 +2,8 @@ package graphql
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 type client struct {
@@ -18,12 +16,6 @@ type Client interface {
 	SetToken(token string)
 	DoQuery(query string) (*http.Response, error)
 	DoQueryWithVariables(query string, variables ...Variable) (*http.Response, error)
-}
-
-//Variable respresents a query variable
-type Variable struct {
-	Name  string
-	Value interface{}
 }
 
 // NewClient initialize a new graphql client
@@ -44,33 +36,12 @@ func (c *client) DoQuery(query string) (*http.Response, error) {
 
 // DoQueryWithVariables performs a graphql query that includes one or more variables
 func (c *client) DoQueryWithVariables(query string, variables ...Variable) (*http.Response, error) {
-	variablesQuery := variablesToString(variables)
-	formattedQuery := formatQueryWithvariablesToRequest(
+	variablesQuery := formatVariables(variables)
+	formattedQuery := formatQueryWithvariables(
 		strconv.QuoteToASCII(query),
 		variablesQuery)
 
 	return doRequest(c.url, c.token, formattedQuery)
-}
-
-func variablesToString(variables []Variable) string {
-	queryVariables := []string{}
-	var keyvalue string
-	for _, v := range variables {
-		s, ok := v.Value.(string)
-		if ok {
-			keyvalue = fmt.Sprintf(`%s:%v`, strconv.QuoteToASCII(v.Name), strconv.QuoteToASCII(s))
-		} else {
-			keyvalue = fmt.Sprintf(`%s:%v`, strconv.QuoteToASCII(v.Name), v.Value)
-		}
-		queryVariables = append(queryVariables, keyvalue)
-	}
-	return strings.Join(queryVariables, ",")
-}
-
-func formatQueryWithvariablesToRequest(queryString string, variablesString string) string {
-	query := `{"query": ` + queryString + `,` +
-		`"variables": {` + variablesString + `}}`
-	return query
 }
 
 func formatQueryToRequest(queryString string) string {
