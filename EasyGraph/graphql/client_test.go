@@ -21,7 +21,7 @@ func TestAddSingleFieldWithoutArguments(t *testing.T) {
 
 	c := NewClient2("myurl")
 	q := c.QueryBuilder().AddObject("hero").AddSingleField("name")
-	printedQuery := q.print()
+	printedQuery := q.Query().GetString()
 	if expectedSingleFieldWithoutArguments != printedQuery {
 		t.Errorf("\n `%s` \n was expected but got `%s`", expectedSingleFieldWithoutArguments, printedQuery)
 	}
@@ -29,8 +29,8 @@ func TestAddSingleFieldWithoutArguments(t *testing.T) {
 
 func TestAddNestedObjectField(t *testing.T) {
 	c := NewClient2("myurl")
-	q := c.QueryBuilder().AddObject("hero").AddSingleField("name").ObjectField("friends").AddSingleField("name")
-	printedQuery := q.print()
+	q := c.QueryBuilder().AddObject("hero").AddSingleField("name").AddObjectField("friends").AddSingleField("name")
+	printedQuery := q.Query().GetString()
 	if expectedNestedObjectField != printedQuery {
 		t.Errorf("\n `%s` \n was expected but got `%s`", expectedNestedObjectField, printedQuery)
 	}
@@ -42,7 +42,7 @@ func TestAddSimpleFieldWithArguments(t *testing.T) {
 		Value: "1000",
 	}
 	q := c.QueryBuilder().AddObject("heroes").AddSingleFieldWithArguments("human", arg)
-	printedQuery := q.print()
+	printedQuery := q.Query().GetString()
 	if expectedSingleWithArguments != printedQuery {
 		t.Errorf("\n `%s` \n was expected but got `%s`", expectedSingleWithArguments, printedQuery)
 	}
@@ -87,6 +87,16 @@ func TestExecuteQueryWithArgumentsSuccesfully(t *testing.T) {
 	if string(body) != string(avatarCallAnswer) {
 		t.Errorf("%v was expected but got %v", string(avatarCallAnswer), string(body))
 	}
+}
+
+func TestExecuteRawQuery(t *testing.T) {
+	handler := &testHandler{}
+	ts := httptest.NewServer(handler)
+
+	c := NewClient2(ts.URL)
+	qb := c.QueryBuilder()
+	_ = qb
+	//qb.CreateRawQuery(``)
 }
 
 var expectedSingleFieldWithoutArguments = `{"query": "query { hero { name }}"}`

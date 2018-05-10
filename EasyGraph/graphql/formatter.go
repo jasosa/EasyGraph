@@ -7,7 +7,12 @@ import (
 
 var fmtSeparator = " "
 
-func formatQuery(q *Query) string {
+func formatRawQuery(q *rawQuery) string {
+	quotedQuery := strconv.QuoteToASCII(q.stringQuery)
+	return `{"query": ` + quotedQuery + `}`
+}
+
+func formatQuery(q *StructuredQuery) string {
 	objectsAndFields := []string{}
 	objectsAndFields = append(objectsAndFields, `query { `)
 	for _, object := range q.getObjects() {
