@@ -10,6 +10,12 @@ type Field interface {
 	GetString() string
 }
 
+//Argument respresents a field argument
+type Argument struct {
+	Name  string
+	Value interface{}
+}
+
 type singleField struct {
 	name string
 	args []Argument
@@ -41,10 +47,4 @@ type objectField struct {
 
 func (o *objectField) GetString() string {
 	return formatObject(o.object)
-}
-
-//Argument respresents a field argument
-type Argument struct {
-	Name  string
-	Value interface{}
 }
