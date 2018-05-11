@@ -2,6 +2,12 @@ package graphql
 
 import "sync"
 
+//Variable respresents a query variable
+type Variable struct {
+	Name  string
+	Value interface{}
+}
+
 // QueryBuilder is used to create Query Objects
 type QueryBuilder struct {
 	mux           sync.Mutex
@@ -69,8 +75,9 @@ func (q *QueryBuilder) Query() Query {
 }
 
 //CreateRawQuery creates and returns a raw query
-func (q *QueryBuilder) CreateRawQuery(query string) Query {
+func (q *QueryBuilder) CreateRawQuery(query string, variables ...Variable) Query {
 	return &rawQuery{
 		stringQuery: query,
+		variables:   variables,
 	}
 }

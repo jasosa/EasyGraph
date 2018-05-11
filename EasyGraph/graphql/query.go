@@ -17,11 +17,12 @@ func (q *StructuredQuery) getObjects() map[string]*Object {
 
 // GetString gets a string representation of the query
 func (q *StructuredQuery) GetString() string {
-	return formatQuery(q)
+	return formatStructuredQuery(q)
 }
 
 type rawQuery struct {
 	stringQuery string
+	variables   []Variable
 }
 
 // GetString gets a string representation of the query

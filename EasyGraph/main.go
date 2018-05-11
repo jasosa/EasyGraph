@@ -11,27 +11,10 @@ import (
 
 func main() {
 
-	/* c := graphql.NewClient("https://api.github.com/graphql")
-	c.SetToken("752ef8aa4fe9ee69adfac01edc769fae7ac06bcc")
-
-	for _, q := range queries {
-		res, err := c.DoQuery(q)
-		parse(res, err)
-	}
-
-	for _, q := range queriesWithVariables {
-		v := graphql.Variable{
-			Name:  "number_of_repos",
-			Value: 3,
-		}
-		res, err := c.DoQueryWithVariables(q, v)
-		parse(res, err)
-	} */
-
-	fmt.Println("################ client2 #############")
+	fmt.Println("################ client test #############")
 
 	c2 := graphql.NewClient2("https://api.github.com/graphql")
-	c2.SetToken("752ef8aa4fe9ee69adfac01edc769fae7ac06bcc")
+	c2.SetToken("set your token here")
 
 	q := c2.QueryBuilder().CreateRawQuery(`query {viewer{login}}`)
 	res, err := c2.Execute(q)
