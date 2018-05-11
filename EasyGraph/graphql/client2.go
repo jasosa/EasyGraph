@@ -39,7 +39,7 @@ func (c *client2) Execute(q Query) (*http.Response, error) {
 	return doReq(c.url, c.token, query)
 }
 
-func doRequest(url, token, formattedQuery string) (*http.Response, error) {
+func doReq(url, token, formattedQuery string) (*http.Response, error) {
 	req, err := http.NewRequest("POST", url, bytes.NewBufferString(formattedQuery))
 	if err != nil {
 		return nil, err
