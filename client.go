@@ -17,8 +17,8 @@ type client struct {
 	token string
 }
 
-// NewClient2 ...
-func NewClient2(url string) Client {
+// NewClient initializes a new client
+func NewClient(url string) Client {
 	return &client{
 		url: url,
 	}

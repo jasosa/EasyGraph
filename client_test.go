@@ -10,7 +10,7 @@ import (
 )
 
 func TestQueryReturnsAnEmptyQuery(t *testing.T) {
-	c := NewClient2("myurl")
+	c := NewClient("myurl")
 	q := c.QueryBuilder()
 	if q == nil {
 		t.Errorf("Query object was expected but got nil")
@@ -19,7 +19,7 @@ func TestQueryReturnsAnEmptyQuery(t *testing.T) {
 
 func TestAddSingleFieldWithoutArguments(t *testing.T) {
 
-	c := NewClient2("myurl")
+	c := NewClient("myurl")
 	q := c.QueryBuilder().AddObject("hero").AddSingleField("name")
 	printedQuery := q.Query().GetString()
 	if expectedSingleFieldWithoutArguments != printedQuery {
@@ -28,7 +28,7 @@ func TestAddSingleFieldWithoutArguments(t *testing.T) {
 }
 
 func TestAddNestedObjectField(t *testing.T) {
-	c := NewClient2("myurl")
+	c := NewClient("myurl")
 	q := c.QueryBuilder().AddObject("hero").AddSingleField("name").AddObjectField("friends").AddSingleField("name")
 	printedQuery := q.Query().GetString()
 	if expectedNestedObjectField != printedQuery {
@@ -36,7 +36,7 @@ func TestAddNestedObjectField(t *testing.T) {
 	}
 }
 func TestAddSimpleFieldWithArguments(t *testing.T) {
-	c := NewClient2("myurl")
+	c := NewClient("myurl")
 	arg := Argument{
 		Name:  "id",
 		Value: "1000",
@@ -52,7 +52,7 @@ func TestExecuteSimpleQuerySuccesfully(t *testing.T) {
 	handler := &testHandler{}
 	ts := httptest.NewServer(handler)
 
-	c := NewClient2(ts.URL)
+	c := NewClient(ts.URL)
 	q := c.QueryBuilder()
 	q = q.AddObject("viewer").AddSingleField("login")
 	res, err := c.Execute(q.Query())
@@ -70,7 +70,7 @@ func TestExecuteQueryWithArgumentsSuccesfully(t *testing.T) {
 	handler := &testHandler{}
 	ts := httptest.NewServer(handler)
 
-	c := NewClient2(ts.URL)
+	c := NewClient(ts.URL)
 	qb := c.QueryBuilder()
 	arg := Argument{
 		Name:  "size",
@@ -93,7 +93,7 @@ func TestExecuteRawQuery(t *testing.T) {
 	handler := &testHandler{}
 	ts := httptest.NewServer(handler)
 
-	c := NewClient2(ts.URL)
+	c := NewClient(ts.URL)
 	qb := c.QueryBuilder()
 	_ = qb
 	//qb.CreateRawQuery(``)
