@@ -1,4 +1,4 @@
-package graphql
+package easygraph
 
 // Query represents a graphql query
 type Query interface {

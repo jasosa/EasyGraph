@@ -1,4 +1,4 @@
-package graphql
+package easygraph
 
 // Object represents an object in a query
 type Object struct {

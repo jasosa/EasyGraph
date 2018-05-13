@@ -6,14 +6,14 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/jasosa/EasyGraph/EasyGraph/graphql"
+	"github.com/jasosa/EasyGraph"
 )
 
 func main() {
 
 	fmt.Println("################ client test #############")
 
-	c2 := graphql.NewClient2("https://api.github.com/graphql")
+	c2 := easygraph.NewClient2("https://api.github.com/graphql")
 	c2.SetToken("set your token here")
 
 	q := c2.QueryBuilder().CreateRawQuery(`query {viewer{login}}`)
@@ -28,7 +28,7 @@ func main() {
 	res, err = c2.Execute(q)
 	parse(res, err)
 
-	qb := c2.QueryBuilder().AddObject("viewer").AddSingleFieldWithArguments("avatarUrl", graphql.Argument{Name: "size", Value: 512})
+	qb := c2.QueryBuilder().AddObject("viewer").AddSingleFieldWithArguments("avatarUrl", easygraph.Argument{Name: "size", Value: 512})
 	res, err = c2.Execute(qb.Query())
 	parse(res, err)
 
