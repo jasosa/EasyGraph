@@ -96,7 +96,16 @@ func TestExecuteRawQuery(t *testing.T) {
 	c := NewClient(ts.URL)
 	qb := c.QueryBuilder()
 	_ = qb
-	//qb.CreateRawQuery(``)
+	q := qb.CreateRawQuery(loginCall)
+	res, err := c.Execute(q)
+	if err != nil {
+		t.Errorf("Error was not expected but got %s", err)
+	}
+
+	body, _ := ioutil.ReadAll(res.Body)
+	if string(body) != string(loginCallAnswer) {
+		t.Errorf("%v was expected but got %v", string(loginCallAnswer), string(body))
+	}
 }
 
 var expectedSingleFieldWithoutArguments = `{"query": "query { hero { name }}"}`
