@@ -30,11 +30,11 @@ Not implemented in RawQueries:
 * Mutations
 * Inline Fragments
 
-Using Structured queries currently allows to:
+Using StructuredQueries currently allows to:
 * Create and execute queries with simple fields 
 * Create and execute queries with nested fields
 
-Not implemented in RawQueries:
+Not implemented in StructuredQueries:
 * Arguments
 * Aliases
 * Fragments
