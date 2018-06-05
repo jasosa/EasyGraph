@@ -14,8 +14,7 @@ a non-existent problem for anyone apart of me! :D The motivations behind it were
  EasyGraph is based on the following documentation: https://graphql.org/learn/  
 
  It supports two different modes of working: RawQueries and StructuredQueries. Using RawQueries is similar to write a GraphQL
-  query but with a little layer of abstraction on it. StructuredQueries wants to simplify even more the creation of GraphQL queries. Both modes
-  are in a very early stage of development. 
+  query but with a little layer of abstraction on it. StructuredQueries wants to simplify even more the creation of GraphQL queries. Both modes are in a very early stage of development. 
 
 Using RawQueries currently allows to:
 * Create and execute queries with simple fields 
@@ -43,9 +42,55 @@ Not implemented in StructuredQueries:
 * Mutations
 * Inline Fragments
 
+Also implemented:
+* Support for Bearer token authentication
+
+
+
+
  ## How it works?
 
-TBD
+As mentioned before, there are two ways of execute queries, but the starting point is the same for both:
+
+
+    * First you need to initialize the client and create a query builder:
+	```
+        c := easygraph.NewClient(graphqlapiurl)
+	    qb := c.QueryBuilder()
+    ```
+
+    * Then you can create a RawQuery doing the following:
+   ```
+         q := qb.CreateRawQuery(myquery)
+   ```
+
+    being myquery, for example:
+    ```
+    query {
+		hero {
+		  name
+		}
+	  }
+    ```
+
+    * Finally you can use the clien to run the query:
+    ````
+        res, err := c.Execute(q)
+    ```
+
+    * Creating the same query using StructuredQuery will require to do the following, once you have initialized the client:
+    ```
+        qb := qb.AddObject("hero") // Add the object you want to query, this returns the QueryBuilder again
+        qb := q.AddSingleField("name") // Add the field/s you want to request
+        q := qb.Query() // Get the query
+        res, err := c.Execute(q) // Execute it
+    ```
+
+    * If you need to use Bearer token authentication you can do it using the client in the 
+        following way:
+    ```
+        c.SetToken(token)
+    ``` 
 
  ## How I run the tests?
 
