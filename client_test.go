@@ -1,163 +1,57 @@
 package easygraph
 
 import (
-	"encoding/json"
-	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
-func TestQueryReturnsAnEmptyQuery(t *testing.T) {
+func TestNewClientInitializesAClient(t *testing.T) {
 	c := NewClient("myurl")
-	q := c.QueryBuilder()
-	if q == nil {
-		t.Errorf("Query object was expected but got nil")
+	if c == nil {
+		t.Errorf("An initialized client was expected but got nil")
 	}
 }
 
-func TestAddSingleFieldWithoutArguments(t *testing.T) {
+func TestSendSimpleQuery(t *testing.T) {
 
-	c := NewClient("myurl")
-	q := c.QueryBuilder().AddObject("hero").AddSingleField("name")
-	printedQuery := q.Query().GetString()
-	if expectedSingleFieldWithoutArguments != printedQuery {
-		t.Errorf("\n `%s` \n was expected but got `%s`", expectedSingleFieldWithoutArguments, printedQuery)
-	}
-}
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.Write([]byte("Error reading query"))
+			return
+		}
 
-func TestAddNestedObjectField(t *testing.T) {
-	c := NewClient("myurl")
-	q := c.QueryBuilder().AddObject("hero").AddSingleField("name").AddObjectField("friends").AddSingleField("name")
-	printedQuery := q.Query().GetString()
-	if expectedNestedObjectField != printedQuery {
-		t.Errorf("\n `%s` \n was expected but got `%s`", expectedNestedObjectField, printedQuery)
-	}
-}
-func TestAddSimpleFieldWithArguments(t *testing.T) {
-	c := NewClient("myurl")
-	arg := Argument{
-		Name:  "id",
-		Value: "1000",
-	}
-	q := c.QueryBuilder().AddObject("heroes").AddSingleFieldWithArguments("human", arg)
-	printedQuery := q.Query().GetString()
-	if expectedSingleWithArguments != printedQuery {
-		t.Errorf("\n `%s` \n was expected but got `%s`", expectedSingleWithArguments, printedQuery)
-	}
-}
+		sbody := string(body)
+		if sbody != expectedSimpleQueryInServer {
+			t.Errorf("Wrong query sent: %q was expected to be sent but got %q", expectedSimpleQueryInServer, sbody)
+			return
+		}
 
-func TestExecuteSimpleQuerySuccesfully(t *testing.T) {
-	handler := &testHandler{}
-	ts := httptest.NewServer(handler)
+		io.WriteString(w, "{ hero { name : \"R2D2\" } }")
+	}))
+	defer s.Close()
 
-	c := NewClient(ts.URL)
-	q := c.QueryBuilder()
-	q = q.AddObject("viewer").AddSingleField("login")
-	res, err := c.Execute(q.Query())
+	c := NewClient(s.URL)
+	q := c.QueryBuilder().Query(simpleQuery)
+	res, err := c.Run(q)
 	if err != nil {
-		t.Errorf("Error was not expected but got %s", err)
+		t.Fatalf("Error was not expected but got %v", err)
 	}
 
-	body, _ := ioutil.ReadAll(res.Body)
-	if string(body) != string(loginCallAnswer) {
-		t.Errorf("%v was expected but got %v", string(loginCallAnswer), string(body))
-	}
-}
-
-func TestExecuteQueryWithArgumentsSuccesfully(t *testing.T) {
-	handler := &testHandler{}
-	ts := httptest.NewServer(handler)
-
-	c := NewClient(ts.URL)
-	qb := c.QueryBuilder()
-	arg := Argument{
-		Name:  "size",
-		Value: 512,
-	}
-
-	query := qb.AddObject("viewer").AddSingleFieldWithArguments("avatarUrl", arg).Query()
-	res, err := c.Execute(query)
+	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		t.Errorf("Error was not expected but got %s", err)
+		t.Fatalf("Error  %q unmarshaling response", err.Error())
 	}
 
-	body, _ := ioutil.ReadAll(res.Body)
-	if string(body) != string(avatarCallAnswer) {
-		t.Errorf("%v was expected but got %v", string(avatarCallAnswer), string(body))
-	}
-}
-
-func TestExecuteRawQuery(t *testing.T) {
-	handler := &testHandler{}
-	ts := httptest.NewServer(handler)
-
-	c := NewClient(ts.URL)
-	qb := c.QueryBuilder()
-	_ = qb
-	q := qb.CreateRawQuery(loginCall)
-	res, err := c.Execute(q)
-	if err != nil {
-		t.Errorf("Error was not expected but got %s", err)
-	}
-
-	body, _ := ioutil.ReadAll(res.Body)
-	if string(body) != string(loginCallAnswer) {
-		t.Errorf("%v was expected but got %v", string(loginCallAnswer), string(body))
+	if string(body) != "{ hero { name : \"R2D2\" } }" {
+		t.Errorf("%q was expected but got %q", "{ hero { name : \"R2D2\" } }", string(body))
 	}
 }
-
-var expectedSingleFieldWithoutArguments = `{"query": "query { hero { name }}"}`
-var expectedNestedObjectField = `{"query": "query { hero { name friends { name } }}"}`
-var expectedSingleWithArguments = `{"query": "query { heroes { human (id: \"1000\" ) }}"}`
-
-var loginCallAnswer = []byte(`{
-	"data": {
-	  "viewer": {
-		"login": "jasosa"
-	  }
-	}
-  }`)
-
-var avatarCallAnswer = []byte(`{
-	"data": {
-	  "viewer": {
-		"avatarUrl": "myavataurl"
-	  }
-	}
-  }`)
 
 var (
-	loginCall  = "query { viewer { login }}"
-	avatarCall = "query { viewer { avatarUrl (size: 512 ) }}"
+	simpleQuery                 = `query { hero { name } }`
+	expectedSimpleQueryInServer = `{"query": "query { hero { name } }"}`
 )
-
-type graphqlQuery struct {
-	Query     string            `json:"query"`
-	Variables map[string]string `json:"variables"`
-}
-
-type testHandler struct {
-}
-
-func (h *testHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	body, _ := ioutil.ReadAll(req.Body)
-	gq := &graphqlQuery{}
-	err := json.Unmarshal(body, gq)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	switch gq.Query {
-	case loginCall:
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(loginCallAnswer)
-	case avatarCall:
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(avatarCallAnswer)
-	}
-
-}

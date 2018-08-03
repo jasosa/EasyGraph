@@ -16,9 +16,9 @@ func main() {
 
 	fmt.Println("Testing raw queries...")
 	for i := range rawQueries {
-		q := qb.CreateRawQuery(rawQueries[i])
+		q := qb.Query(rawQueries[i])
 		fmt.Println("==> Query: ", q.GetString())
-		res, err := c.Execute(q)
+		res, err := c.Run(q)
 		parseResponse(res, err)
 	}
 }
@@ -33,7 +33,7 @@ func parseResponse(res *http.Response, err error) {
 }
 
 var rawQueries = []string{
-	`query {
+	` {
 		hero {
 		  name
 		}
