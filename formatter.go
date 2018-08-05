@@ -1,36 +1,13 @@
 package easygraph
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 )
 
 var fmtSeparator = " "
-
-func formatStructuredQuery(q *StructuredQuery) string {
-	objectsAndFields := []string{}
-	objectsAndFields = append(objectsAndFields, `query { `)
-	for _, object := range q.getObjects() {
-		objectsAndFields = append(objectsAndFields, formatObject(object))
-	}
-
-	objectsAndFields = append(objectsAndFields, `}`)
-	query := strings.Join(objectsAndFields, "")
-	asciiQuery := strconv.QuoteToASCII(query)
-	return `{"query": ` + asciiQuery + `}`
-}
-
-func formatObject(object *Object) string {
-	var stringsObject []string
-	stringsObject = append(stringsObject, object.name)
-	stringsObject = append(stringsObject, `{`)
-	for _, field := range object.fields {
-		stringsObject = append(stringsObject, field.GetString())
-	}
-	stringsObject = append(stringsObject, `}`)
-	return strings.Join(stringsObject, fmtSeparator)
-}
 
 func formatRawQuery(q *rawQuery) string {
 	var formattedQuery string
@@ -46,16 +23,12 @@ func formatRawQuery(q *rawQuery) string {
 	return formattedQuery
 }
 
-func formatVariables(variables []Variable) string {
+func formatVariables(variables []variable) string {
 	queryVariables := []string{}
 	var keyvalue string
 	for _, v := range variables {
-		s, ok := v.Value.(string)
-		if ok {
-			keyvalue = fmt.Sprintf(`%s:%v`, strconv.QuoteToASCII(v.Name), strconv.QuoteToASCII(s))
-		} else {
-			keyvalue = fmt.Sprintf(`%s:%v`, strconv.QuoteToASCII(v.Name), v.Value)
-		}
+		bytesValue, _ := json.Marshal(v.Value)
+		keyvalue = fmt.Sprintf(`%s:%v`, strconv.QuoteToASCII(v.Name), string(bytesValue))
 		queryVariables = append(queryVariables, keyvalue)
 	}
 	return strings.Join(queryVariables, ",")

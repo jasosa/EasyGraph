@@ -10,17 +10,49 @@ import (
 
 func main() {
 
-	fmt.Println("Initializing easygraph client...")
+	fmt.Println("######## Initializing easygraph client... ########")
 	c := easygraph.NewClient("http://localhost:8080/graphql")
 	qb := c.QueryBuilder()
 
-	fmt.Println("Testing raw queries...")
+	fmt.Println("######## Testing queries... ########")
 	for i := range rawQueries {
-		q := qb.CreateRawQuery(rawQueries[i])
+		q := qb.Query(rawQueries[i])
 		fmt.Println("==> Query: ", q.GetString())
-		res, err := c.Execute(q)
+		res, err := c.Run(q)
 		parseResponse(res, err)
 	}
+
+	fmt.Println("######## Testing queries with variables... ########")
+	q := qb.Query(heroNameAndFriendsQuery)
+	q.AddVariable("episode", "JEDI")
+	fmt.Println("==> Query: ", q.GetString())
+	res, err := c.Run(q)
+	parseResponse(res, err)
+
+	q = qb.Query(heroWithDirectiveQuery)
+	q.AddVariable("episode", "JEDI")
+	q.AddVariable("withFriends", false)
+	fmt.Println("==> Query: ", q.GetString())
+	res, err = c.Run(q)
+	parseResponse(res, err)
+
+	q = qb.Query(createEpisodeReviewMutation)
+	q.AddVariable("ep", "JEDI")
+	type Review struct {
+		Stars      int    `json:"stars"`
+		Commentary string `json:"commentary"`
+	}
+	q.AddVariable("review", Review{Commentary: "Fantastic movie!", Stars: 5})
+	fmt.Println("==> Query: ", q.GetString())
+	res, err = c.Run(q)
+	parseResponse(res, err)
+
+	q = qb.Query(heroByEpisodeQuery)
+	q.AddVariable("ep", "JEDI")
+	fmt.Println("==> Query: ", q.GetString())
+	res, err = c.Run(q)
+	parseResponse(res, err)
+
 }
 
 func parseResponse(res *http.Response, err error) {
@@ -33,7 +65,7 @@ func parseResponse(res *http.Response, err error) {
 }
 
 var rawQueries = []string{
-	`query {
+	` {
 		hero {
 		  name
 		}
@@ -67,5 +99,56 @@ var rawQueries = []string{
 		jediHero: hero(episode: JEDI) {
 		  name
 		}
-	  }`,
+		}`,
+	`{
+			search(text: "an") {
+				__typename
+				... on Human {
+					name
+				}
+				... on Droid {
+					name
+				}
+				... on Starship {
+					name
+				}
+			}
+		}`,
 }
+
+var heroNameAndFriendsQuery = `query HeroNameAndFriends($episode: Episode) {
+		hero(episode: $episode) {
+			name
+			friends {
+				name
+			}
+		}
+	}`
+
+var heroWithDirectiveQuery = `query Hero($episode: Episode, $withFriends: Boolean!) {
+		hero(episode: $episode) {
+			name
+			friends @include(if: $withFriends) {
+				name
+			}
+		}
+	}`
+
+var createEpisodeReviewMutation = `mutation CreateReviewForEpisode($ep: Episode!, $review: ReviewInput!) {
+  createReview(episode: $ep, review: $review) {
+    stars
+    commentary
+  }
+}`
+
+var heroByEpisodeQuery = `query HeroForEpisode($ep: Episode!) {
+  hero(episode: $ep) {
+    name
+    ... on Droid {
+      primaryFunction
+    }
+    ... on Human {
+      height
+    }
+  }
+}`

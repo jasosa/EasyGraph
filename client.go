@@ -9,7 +9,7 @@ import (
 type Client interface {
 	SetToken(token string)
 	QueryBuilder() *QueryBuilder
-	Execute(q Query) (*http.Response, error)
+	Run(q Query) (*http.Response, error)
 }
 
 type client struct {
@@ -29,12 +29,10 @@ func (c *client) SetToken(token string) {
 }
 
 func (c *client) QueryBuilder() *QueryBuilder {
-	return &QueryBuilder{
-		objects: make(map[string]*Object),
-	}
+	return &QueryBuilder{}
 }
 
-func (c *client) Execute(q Query) (*http.Response, error) {
+func (c *client) Run(q Query) (*http.Response, error) {
 	query := q.GetString()
 	return doReq(c.url, c.token, query)
 }
