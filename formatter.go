@@ -1,6 +1,7 @@
 package easygraph
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -22,16 +23,12 @@ func formatRawQuery(q *rawQuery) string {
 	return formattedQuery
 }
 
-func formatVariables(variables []Variable) string {
+func formatVariables(variables []variable) string {
 	queryVariables := []string{}
 	var keyvalue string
 	for _, v := range variables {
-		s, ok := v.Value.(string)
-		if ok {
-			keyvalue = fmt.Sprintf(`%s:%v`, strconv.QuoteToASCII(v.Name), strconv.QuoteToASCII(s))
-		} else {
-			keyvalue = fmt.Sprintf(`%s:%v`, strconv.QuoteToASCII(v.Name), v.Value)
-		}
+		bytesValue, _ := json.Marshal(v.Value)
+		keyvalue = fmt.Sprintf(`%s:%v`, strconv.QuoteToASCII(v.Name), string(bytesValue))
 		queryVariables = append(queryVariables, keyvalue)
 	}
 	return strings.Join(queryVariables, ",")

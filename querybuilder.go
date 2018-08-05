@@ -3,7 +3,7 @@ package easygraph
 import "sync"
 
 //Variable respresents a query variable
-type Variable struct {
+type variable struct {
 	Name  string
 	Value interface{}
 }
@@ -14,9 +14,8 @@ type QueryBuilder struct {
 }
 
 //Query creates and returns a raw query
-func (q *QueryBuilder) Query(query string, variables ...Variable) Query {
+func (q *QueryBuilder) Query(query string) Query {
 	return &rawQuery{
 		stringQuery: query,
-		variables:   variables,
 	}
 }
