@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
+	"strings"
 
 	"github.com/jasosa/EasyGraph"
 )
@@ -14,11 +13,13 @@ func main() {
 	c := easygraph.NewClient("http://localhost:8080/graphql")
 	qb := c.QueryBuilder()
 
+	res := make(map[string]interface{})
+
 	fmt.Println("######## Testing queries... ########")
 	for i := range rawQueries {
 		q := qb.Query(rawQueries[i])
 		fmt.Println("==> Query: ", q.GetString())
-		res, err := c.Run(q)
+		err := c.Run(q, &res)
 		parseResponse(res, err)
 	}
 
@@ -26,14 +27,14 @@ func main() {
 	q := qb.Query(heroNameAndFriendsQuery)
 	q.AddVariable("episode", "JEDI")
 	fmt.Println("==> Query: ", q.GetString())
-	res, err := c.Run(q)
+	err := c.Run(q, &res)
 	parseResponse(res, err)
 
 	q = qb.Query(heroWithDirectiveQuery)
 	q.AddVariable("episode", "JEDI")
 	q.AddVariable("withFriends", false)
 	fmt.Println("==> Query: ", q.GetString())
-	res, err = c.Run(q)
+	err = c.Run(q, &res)
 	parseResponse(res, err)
 
 	q = qb.Query(createEpisodeReviewMutation)
@@ -44,24 +45,38 @@ func main() {
 	}
 	q.AddVariable("review", Review{Commentary: "Fantastic movie!", Stars: 5})
 	fmt.Println("==> Query: ", q.GetString())
-	res, err = c.Run(q)
+	err = c.Run(q, &res)
 	parseResponse(res, err)
 
 	q = qb.Query(heroByEpisodeQuery)
 	q.AddVariable("ep", "JEDI")
 	fmt.Println("==> Query: ", q.GetString())
-	res, err = c.Run(q)
+	err = c.Run(q, &res)
 	parseResponse(res, err)
 
 }
 
-func parseResponse(res *http.Response, err error) {
+func parseResponse(res map[string]interface{}, err error) {
 	defer fmt.Println("")
 	if err != nil {
 		fmt.Println("==> Error: ", err)
 	}
-	body, _ := ioutil.ReadAll(res.Body)
-	fmt.Println("==> Answer: ", string(body))
+
+	fmt.Println("==> Answer: ", printMapValues(res))
+}
+
+func printMapValues(m map[string]interface{}) string {
+	builder := &strings.Builder{}
+	for k, v := range m {
+		m2, ok := v.(map[string]interface{})
+		if ok {
+			builder.WriteString(printMapValues(m2))
+		} else {
+			builder.WriteString(fmt.Sprintf("%s:%v", k, v))
+			builder.WriteString(" ")
+		}
+	}
+	return builder.String()
 }
 
 var rawQueries = []string{
