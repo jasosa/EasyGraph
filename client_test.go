@@ -30,24 +30,20 @@ func TestSendSimpleQuery(t *testing.T) {
 			return
 		}
 
-		io.WriteString(w, expectedSimpleResponse)
+		io.WriteString(w, serverSimpleQueryResponse)
 	}))
 	defer s.Close()
 
 	c := NewClient(s.URL)
 	q := c.QueryBuilder().Query(simpleQuery)
-	res, err := c.Run(q)
+	var resp QueryResponse
+	err := c.Run(q, &resp)
 	if err != nil {
 		t.Fatalf("error was not expected but got %v", err)
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("error  %q unmarshaling response", err.Error())
-	}
-
-	if string(body) != expectedSimpleResponse {
-		t.Errorf("%q was expected but got %q", expectedSimpleResponse, string(body))
+	if resp.Data.Hero.Name != expectedQueryResponse {
+		t.Errorf("%q was expected but got %q", expectedQueryResponse, resp.Data.Hero.Name)
 	}
 }
 
@@ -66,7 +62,7 @@ func TestSendWithVariables(t *testing.T) {
 			return
 		}
 
-		io.WriteString(w, expectedQueryWithVariablesResponse)
+		io.WriteString(w, serverQueryWithVariablesResponse)
 	}))
 	defer s.Close()
 
@@ -74,18 +70,14 @@ func TestSendWithVariables(t *testing.T) {
 	q := c.QueryBuilder().Query(queryWithVariables)
 	q.AddVariable("episode", "JEDI")
 
-	res, err := c.Run(q)
+	var resp QueryResponse
+	err := c.Run(q, &resp)
 	if err != nil {
 		t.Fatalf("error was not expected but got %v", err)
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatalf("error  %q unmarshaling response", err.Error())
-	}
-
-	if string(body) != expectedQueryWithVariablesResponse {
-		t.Errorf("%q was expected but got %q", expectedQueryWithVariablesResponse, string(body))
+	if resp.Data.Hero.Name != expectedQueryResponse {
+		t.Errorf("%q was expected but got %q", expectedQueryResponse, resp.Data.Hero.Name)
 	}
 }
 
@@ -96,12 +88,15 @@ func TestQueryWithCredentials(t *testing.T) {
 			t.Errorf("authentication %q was expected but got %q", expectedAuthentication, authToken)
 			return
 		}
+
+		io.WriteString(w, serverSimpleQueryResponse)
 	}))
 	defer s.Close()
 
 	c := NewClient(s.URL)
 	c.SetToken("12345678")
-	_, err := c.Run(c.QueryBuilder().Query(simpleQuery))
+	m := make(map[string]interface{})
+	err := c.Run(c.QueryBuilder().Query(simpleQuery), &m)
 	if err != nil {
 		t.Fatalf("error  %q running query", err.Error())
 	}
@@ -110,11 +105,21 @@ func TestQueryWithCredentials(t *testing.T) {
 var (
 	simpleQuery                 = `query { hero { name } }`
 	expectedSimpleQueryInServer = `{"query": "query { hero { name } }"}`
-	expectedSimpleResponse      = "{ hero { name : \"R2D2\" } }"
+	serverSimpleQueryResponse   = `{"data":{"hero":{"name":"R2-D2"}}}`
 
 	queryWithVariables                 = `query { hero(episode: $episode) { name } }`
 	expectedQueryWithVariablesInServer = `{"query": "query { hero(episode: $episode) { name } }","variables": {"episode":"JEDI"}}`
-	expectedQueryWithVariablesResponse = "{ hero { name : \"R2D2\" } }"
+	serverQueryWithVariablesResponse   = `{"data":{"hero":{"name":"R2-D2"}}}`
+
+	expectedQueryResponse = "R2-D2"
 
 	expectedAuthentication = `Bearer 12345678`
 )
+
+type QueryResponse struct {
+	Data struct {
+		Hero struct {
+			Name string `json:"name"`
+		} `json:"hero"`
+	} `json:"data"`
+}

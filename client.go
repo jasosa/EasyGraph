@@ -2,14 +2,18 @@ package easygraph
 
 import (
 	"bytes"
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 // Client is a graphql client
 type Client interface {
 	SetToken(token string)
 	QueryBuilder() *QueryBuilder
-	Run(q Query) (*http.Response, error)
+	Run(q Query, response interface{}) error
 }
 
 type client struct {
@@ -32,15 +36,21 @@ func (c *client) QueryBuilder() *QueryBuilder {
 	return &QueryBuilder{}
 }
 
-func (c *client) Run(q Query) (*http.Response, error) {
-	query := q.GetString()
-	return doReq(c.url, c.token, query)
+func (c *client) Run2(q Query) (*http.Response, error) {
+	_ = q.GetString()
+	//return doReq(c.url, c.token, query)
+	return nil, nil
 }
 
-func doReq(url, token, formattedQuery string) (*http.Response, error) {
+func (c *client) Run(q Query, response interface{}) error {
+	query := q.GetString()
+	return doReq(c.url, c.token, query, response)
+}
+
+func doReq(url, token, formattedQuery string, response interface{}) error {
 	req, err := http.NewRequest("POST", url, bytes.NewBufferString(formattedQuery))
 	if err != nil {
-		return nil, err
+		return errors.Wrap(err, "error creating request")
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -50,5 +60,19 @@ func doReq(url, token, formattedQuery string) (*http.Response, error) {
 		req.Header.Add("authorization", bearer)
 	}
 
-	return http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "error executing request")
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return errors.Wrap(err, "error reading response")
+	}
+
+	if err := json.Unmarshal(body, response); err != nil {
+		return errors.Wrap(err, "error decoding response")
+	}
+
+	return nil
 }
