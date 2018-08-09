@@ -30,7 +30,7 @@ EasyGraph is, as far as I know, fully functional. You can execute any kind of qu
 
 // Finally you can use the clien to run the query:
 
-	res, err := c.Run(q)
+	res, err := c.Run(q, &response)
 
 // If you need variables in your query you can use the following method:
 
